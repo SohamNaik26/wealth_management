@@ -1,0 +1,94 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  hashedPassword String        @map("hashed_password")
+  firstName     String         @map("first_name")
+  lastName      String         @map("last_name")
+  isActive      Boolean        @default(true) @map("is_active")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime?      @updatedAt @map("updated_at")
+  
+  portfolios    Portfolio[]
+  financialGoals FinancialGoal[]
+  transactions   Transaction[]
+  
+  @@map("users")
+}
+
+model Portfolio {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  userId      Int       @map("user_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime? @updatedAt @map("updated_at")
+  
+  owner       User      @relation(fields: [userId], references: [id])
+  assets      Asset[]
+  
+  @@map("portfolios")
+}
+
+model Asset {
+  id            Int       @id @default(autoincrement())
+  name          String
+  assetType     String    @map("asset_type") // stock, bond, real_estate, cash, etc.
+  tickerSymbol  String?   @map("ticker_symbol")
+  quantity      Float
+  purchasePrice Float     @map("purchase_price")
+  currentPrice  Float     @map("current_price")
+  purchaseDate  DateTime  @map("purchase_date")
+  portfolioId   Int       @map("portfolio_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime? @updatedAt @map("updated_at")
+  
+  portfolio     Portfolio @relation(fields: [portfolioId], references: [id])
+  transactions  Transaction[]
+  
+  @@map("assets")
+}
+
+model FinancialGoal {
+  id            Int       @id @default(autoincrement())
+  name          String
+  description   String?
+  targetAmount  Float     @map("target_amount")
+  currentAmount Float     @default(0.0) @map("current_amount")
+  targetDate    DateTime  @map("target_date")
+  priority      String    // high, medium, low
+  userId        Int       @map("user_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime? @updatedAt @map("updated_at")
+  
+  user          User      @relation(fields: [userId], references: [id])
+  
+  @@map("financial_goals")
+}
+
+model Transaction {
+  id              Int       @id @default(autoincrement())
+  transactionType String    @map("transaction_type") // buy, sell, dividend, deposit, withdrawal
+  amount          Float
+  assetId         Int?      @map("asset_id")
+  userId          Int       @map("user_id")
+  transactionDate DateTime  @default(now()) @map("transaction_date")
+  notes           String?
+  createdAt       DateTime  @default(now()) @map("created_at")
+  
+  user            User      @relation(fields: [userId], references: [id])
+  asset           Asset?    @relation(fields: [assetId], references: [id])
+  
+  @@map("transactions")
+} 
